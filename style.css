@@ -1,0 +1,96 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background: black;
+}
+
+canvas {
+    display: block;
+    margin: auto;
+}
+
+#info {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 22px;
+    font-family: Arial;
+    z-index: 2;
+}
+
+/* ===== START SCREEN ===== */
+#startScreen {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, #111 40%, black 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+#playBtn {
+    font-size: 28px;
+    padding: 20px 50px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(45deg, #222, #444);
+    color: white;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: 0.3s;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    animation: pulse 1.5s infinite;
+}
+
+#playBtn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.7);
+    }
+
+    100% {
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* ===== MOBILE CONTROLS ===== */
+#mobileControls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 3;
+}
+
+#mobileControls button {
+    font-size: 28px;
+    padding: 15px 20px;
+    margin: 5px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+#mobileControls button:active {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+@media (min-width: 900px) {
+    #mobileControls {
+        display: none;
+    }
+}

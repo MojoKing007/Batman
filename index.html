@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Batman vs Joker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+
+        canvas {
+            display: block;
+            margin: auto;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 22px;
+            font-family: Arial;
+            z-index: 2;
+        }
+
+        /* ===== START SCREEN ===== */
+        #startScreen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #111 40%, black 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #playBtn {
+            font-size: 28px;
+            padding: 20px 50px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #222, #444);
+            color: white;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            animation: pulse 1.5s infinite;
+        }
+
+        #playBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(255, 255, 255, 0.7);
+            }
+
+            100% {
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            }
+        }
+
+        /* ===== MOBILE CONTROLS ===== */
+        #mobileControls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 3;
+        }
+
+        #mobileControls button {
+            font-size: 28px;
+            padding: 15px 20px;
+            margin: 5px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        #mobileControls button:active {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        @media (min-width: 900px) {
+            #mobileControls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="startScreen">
+        <button id="playBtn">🦇 START GAME</button>
+    </div>
+
+    <div id="info">
+        🪃 Batarangs Collected: <span id="score">0</span>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="mobileControls">
+        <button id="up">⬆</button>
+        <div>
+            <button id="left">⬅</button>
+            <button id="down">⬇</button>
+            <button id="right">➡</button>
+        </div>
+    </div>
+
+    <audio id="song1" src="song1.mp3"></audio>
+    <audio id="song2" src="song2.mp3"></audio>
+    <audio id="song3" src="song3.mp3"></audio>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function loadImage(src) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+            });
+        }
+
+        Promise.all([
+            loadImage("background.jpg"),
+            loadImage("batman.png"),
+            loadImage("joker.png"),
+            loadImage("batarang.png")
+        ]).then(([backgroundImg, batmanImg, jokerImg, batarangImg]) => {
+
+            const startScreen = document.getElementById("startScreen");
+            const playBtn = document.getElementById("playBtn");
+
+            let gameStarted = false;
+
+            // ===== MUSIC SYSTEM =====
+            const songs = [
+                document.getElementById("song1"),
+                document.getElementById("song2"),
+                document.getElementById("song3")
+            ];
+
+            let currentSong = 0;
+
+            function playNextSong() {
+                songs[currentSong].play();
+            }
+
+            songs.forEach((song, index) => {
+                song.addEventListener("ended", () => {
+                    currentSong = (index + 1) % songs.length;
+                    playNextSong();
+                });
+            });
+
+            function startMusic() {
+                playNextSong();
+            }
+
+            playBtn.addEventListener("click", () => {
+                startScreen.style.display = "none";
+                startMusic();
+                gameStarted = true;
+                gameLoop();
+            });
+
+            // ===== GAME OBJECTS =====
+            let batman = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                width: 90,
+                height: 90,
+                speed: 5
+            };
+
+            let joker = {
+                x: 100,
+                y: 100,
+                width: 75,
+                height: 75,
+                baseSpeed: 2,
+                speed: 2
+            };
+
+            let batarang = {
+                x: Math.random() * (canvas.width - 60),
+                y: Math.random() * (canvas.height - 60),
+                width: 60,
+                height: 60
+            };
+
+            let score = 0;
+            let keys = {};
+
+            document.addEventListener("keydown", e => keys[e.key] = true);
+            document.addEventListener("keyup", e => keys[e.key] = false);
+
+            function bindButton(id, key) {
+                const btn = document.getElementById(id);
+                btn.addEventListener("touchstart", () => keys[key] = true);
+                btn.addEventListener("touchend", () => keys[key] = false);
+                btn.addEventListener("mousedown", () => keys[key] = true);
+                btn.addEventListener("mouseup", () => keys[key] = false);
+            }
+
+            bindButton("left", "ArrowLeft");
+            bindButton("right", "ArrowRight");
+            bindButton("up", "ArrowUp");
+            bindButton("down", "ArrowDown");
+
+            function isColliding(a, b) {
+                return (
+                    a.x < b.x + b.width &&
+                    a.x + a.width > b.x &&
+                    a.y < b.y + b.height &&
+                    a.y + a.height > b.y
+                );
+            }
+
+            function gameLoop() {
+
+                if (!gameStarted) return;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (backgroundImg)
+                    ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+                else {
+                    ctx.fillStyle = "#111";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                if (keys["ArrowLeft"] && batman.x > 0)
+                    batman.x -= batman.speed;
+                if (keys["ArrowRight"] && batman.x < canvas.width - batman.width)
+                    batman.x += batman.speed;
+                if (keys["ArrowUp"] && batman.y > 0)
+                    batman.y -= batman.speed;
+                if (keys["ArrowDown"] && batman.y < canvas.height - batman.height)
+                    batman.y += batman.speed;
+
+                // 🔥 Smooth Difficulty Scaling
+                joker.speed = Math.min(
+                    joker.baseSpeed + score * 0.15,
+                    6
+                );
+
+                let dx = batman.x - joker.x;
+                let dy = batman.y - joker.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 0) {
+                    joker.x += (dx / dist) * joker.speed;
+                    joker.y += (dy / dist) * joker.speed;
+                }
+
+                ctx.drawImage(batmanImg, batman.x, batman.y, batman.width, batman.height);
+                ctx.drawImage(jokerImg, joker.x, joker.y, joker.width, joker.height);
+                ctx.drawImage(batarangImg, batarang.x, batarang.y, batarang.width, batarang.height);
+
+                if (isColliding(batman, batarang)) {
+                    score++;
+                    document.getElementById("score").innerText = score;
+
+                    batarang.x = Math.random() * (canvas.width - 60);
+                    batarang.y = Math.random() * (canvas.height - 60);
+                }
+
+                if (isColliding(batman, joker)) {
+                    alert("💀 Joker Caught Batman!\nFinal Score: " + score);
+                    location.reload();
+                }
+
+                requestAnimationFrame(gameLoop);
+            }
+
+        });
+    </script>
+
+</body>
+
+</html>
